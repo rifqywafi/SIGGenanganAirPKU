@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SIG Genangan Air Pekanbaru</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Fonts & Icons -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <!-- Leaflet -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <!-- ================= HOME PAGE ================= -->
+    <div id="homePage" class="page page-active gradient-bg">
+      <nav class="glass-nav">
+        <div class="brand">
+          <i class="fas fa-water"></i>
+          <span>SIG Genangan Air</span>
+        </div>
+        <button onclick="showMap()" class="btn-primary">
+          <i class="fas fa-map"></i> Buka Peta
+        </button>
+      </nav>
+
+      <!-- VISUAL BACKGROUND -->
+      <div class="map-visual">
+        <div class="grid"></div>
+
+        <!-- Titik Genangan -->
+        <span class="dot d1"></span>
+        <span class="dot d2"></span>
+        <span class="dot d3"></span>
+        <span class="dot d4"></span>
+        <span class="dot d5"></span>
+      </div>
+
+      <section class="hero">
+        <h1>Sistem Informasi Geografis<br />Genangan Air Pekanbaru</h1>
+        <p>
+          Visualisasi titik genangan air berbasis peta interaktif untuk
+          mendukung mitigasi banjir dan perencanaan kota.
+        </p>
+        <!-- HOME DATA VISUAL -->
+        <div class="home-stats">
+          <div class="stat-card">
+            <span>Total Titik</span>
+            <b id="homeTotal">0</b>
+          </div>
+          <div class="stat-card">
+            <span>Rata-rata Kedalaman</span>
+            <b id="homeAvg">0 cm</b>
+          </div>
+          <div class="stat-card">
+            <span>Kecamatan</span>
+            <b id="homeKecamatan">0</b>
+          </div>
+        </div>
+
+        <!-- MINI DOT VISUAL -->
+        <div id="homeDots" class="home-dots"></div>
+
+        <button onclick="showMap()" class="btn-secondary">
+          <i class="fas fa-play-circle"></i> Mulai Eksplorasi
+        </button>
+        
+      </section>
+      
+      <!-- HOME CHART -->
+      <div class="home-chart-wrapper">
+        <div class="chart-card">
+          <h3>Distribusi Kedalaman Genangan</h3>
+          <canvas id="depthChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+          <h3>Persebaran Kecamatan</h3>
+          <canvas id="kecamatanChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= MAP PAGE ================= -->
+    <div id="mapPage" class="page page-hidden">
+      <!-- HEADER -->
+      <header class="map-header">
+        <div class="header-left">
+          <i class="fas fa-water"></i>
+          <span>SIG Genangan Air Pekanbaru</span>
+        </div>
+        <button onclick="showHome()" class="btn-header">
+          <i class="fas fa-home"></i> Beranda
+        </button>
+      </header>
+
+      <!-- MAP WRAPPER -->
+      <div class="map-wrapper">
+        <!-- MAP -->
+        <div id="map"></div>
+
+        <!-- LAYER CONTROL -->
+        <div class="layer-control">
+          <h3><i class="fas fa-layer-group"></i> Kontrol Layer</h3>
+
+          <label>
+            <input type="checkbox" checked onclick="toggleLayer('flood')" />
+            Data Genangan Air
+          </label>
+          <label>
+            <input type="checkbox" checked onclick="toggleLayer('osm')" />
+            OpenStreetMap
+          </label>
+          <label>
+            <input type="checkbox" onclick="toggleLayer('satellite')" />
+            Peta Satelit
+          </label>
+
+          <hr />
+
+          <h4>Statistik</h4>
+          <div class="stat">
+            <span>Total Titik</span>
+            <b id="totalPoints">0</b>
+          </div>
+          <div class="stat">
+            <span>Rata-rata Kedalaman</span>
+            <b id="avgDepth">0 cm</b>
+          </div>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="legend-box">
+          <h3><i class="fas fa-info-circle"></i> Legenda</h3>
+
+          <div class="legend-item">
+            <span class="dot blue"></span> Rendah (1–3 cm)
+          </div>
+          <div class="legend-item">
+            <span class="dot yellow"></span> Sedang (4–6 cm)
+          </div>
+          <div class="legend-item">
+            <span class="dot orange"></span> Tinggi (7–9 cm)
+          </div>
+          <div class="legend-item">
+            <span class="dot red"></span> Sangat Tinggi (≥10 cm)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
