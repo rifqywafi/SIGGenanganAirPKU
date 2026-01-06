@@ -36,11 +36,6 @@
           <i class="fas fa-water text-xl"></i>
           <span class="font-bold text-xl">Sistem Informasi Genangan Air Pekanbaru</span>
         </div>
-        <div class="flex gap-3">
-          <button onclick="showMap()" class="btn-header">
-            <i class="fas fa-map"></i> Buka Peta
-          </button>
-        </div>
       </header>
 
 
@@ -61,13 +56,13 @@
       </div>
 
       <section class="hero">
-        <h1>Sistem Informasi Geografis<br />Genangan Air Pekanbaru</h1>
-        <p>
+        <h1 class="hero-animate">Sistem Informasi Geografis<br />Genangan Air Pekanbaru</h1>
+        <p class="hero-animate">
           Visualisasi titik genangan air berbasis peta interaktif untuk
           mendukung mitigasi banjir dan perencanaan kota.
         </p>
         <!-- HOME DATA VISUAL -->
-        <div class="home-stats">
+        <div class="home-stats hero-stats hero-animate">
           <div class="stat-card">
             <span>Total Titik</span>
             <b id="homeTotal">0</b>
@@ -85,9 +80,14 @@
         <!-- MINI DOT VISUAL -->
         <div id="homeDots" class="home-dots"></div>
 
-        <button onclick="showMap()" class="btn-secondary">
-          <i class="fas fa-play-circle"></i> Mulai Eksplorasi
-        </button>
+        <div class="hero-btn-container hero-animate flex gap-3 justify-center">
+          <button onclick="showMap()" class="btn-secondary">
+            <i class="fas fa-play-circle"></i> Mulai Eksplorasi
+          </button>
+          <button onclick="showVisualization()" class="btn-secondary" style="background: white; color: #647FBC; border: 2px solid white;">
+            <i class="fas fa-chart-pie"></i> Visualisasi Data
+          </button>
+        </div>
         
       </section>
       
@@ -111,10 +111,10 @@
       <header class="map-header z-10">
         <div div class="header-left flex gap-5">
           <i class="fas fa-water text-xl"></i>
-          <span class="font-bold text-xl">Sistem Informasi Genangan Air Pekanbaru</span>
+          <span class="font-bold text-xl">Peta Sebaran Genangan Air Pekanbaru</span>
         </div>
         <div class="flex gap-5">
-          <button onclick="toggleDataPanel()" class="btn-header">
+          <button onclick="showVisualization()" class="btn-header">
             <i class="fas fa-chart-bar"></i> Visualisasi
           </button>
           <button onclick="showHome()" class="btn-header">
@@ -227,87 +227,122 @@
           </div>
         </div>
         
-        <!-- DATA PANEL: Interactive visualization -->
-        <div class="data-panel z-15"  id="dataPanel">
-          <h2 class="mb-3 font-bold text-xl">Visualisasi</h2>
 
-          <div class="filters">
-            <label>Kecamatan:
-              <select id="filterKecamatan"><option value="">Semua</option></select>
-            </label>
-
-            <label>Surveyor:
-              <select id="filterSurveyor"><option value="">Semua</option></select>
-            </label>
-
-            <label>Jenis Permukaan:
-              <select id="filterPermukaan"><option value="">Semua</option></select>
-            </label>
-
-            <label>Kedalaman:
-              <select id="filterKedalaman"><option value="">Semua</option></select>
-            </label>
-
-            <label>Kondisi Drainase:
-              <select id="filterDrainase"><option value="">Semua</option></select>
-            </label>
-
-            <label>Kemiringan Lahan:
-              <select id="filterKemiringan"><option value="">Semua</option></select>
-            </label>
-          </div>
-
-          <!-- Accordion Charts -->
-          <div class="accordion">
-            <div class="accordion-item active">
-              <button class="accordion-btn" onclick="toggleChart('depthChart')"><i class="fas fa-chevron-down"></i> Distribusi Kedalaman</button>
-              <div class="accordion-content" id="depthChartContent">
-                <canvas id="interactiveDepthChart" height="130"></canvas>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <button class="accordion-btn" onclick="toggleChart('kecamatanChart')"><i class="fas fa-chevron-down"></i> Persebaran Kecamatan</button>
-              <div class="accordion-content" id="kecamatanChartContent">
-                <canvas id="interactiveKecamatanChart" height="100"></canvas>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <button class="accordion-btn" onclick="toggleChart('surveyorChart')"><i class="fas fa-chevron-down"></i> Distribusi Surveyor</button>
-              <div class="accordion-content" id="surveyorChartContent">
-                <canvas id="interactiveSurveyorChart" height="130"></canvas>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <button class="accordion-btn" onclick="toggleChart('permukaanChart')"><i class="fas fa-chevron-down"></i> Jenis Permukaan</button>
-              <div class="accordion-content" id="permukaanChartContent">
-                <canvas id="interactivePermukaanChart" height="100"></canvas>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <button class="accordion-btn" onclick="toggleChart('drainaseChart')"><i class="fas fa-chevron-down"></i> Kondisi Drainase</button>
-              <div class="accordion-content" id="drainaseChartContent">
-                <canvas id="interactiveDrainaseChart" height="130"></canvas>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <button class="accordion-btn" onclick="toggleChart('avgDepthChart')"><i class="fas fa-chevron-down"></i> Rata-rata Kedalaman per Kecamatan</button>
-              <div class="accordion-content" id="avgDepthChartContent">
-                <canvas id="interactiveAvgDepthChart" height="130"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>
 
+    <!-- ================= VISUALIZATION PAGE ================= -->
+    <div id="visualizationPage" class="page page-hidden bg-slate-50 overflow-y-auto">
+      <header class="map-header sticky top-0 z-20 shadow-md">
+        <div class="header-left flex gap-5">
+          <i class="fas fa-chart-pie text-xl"></i>
+          <span class="font-bold text-xl">Dashboard Analisis Genangan</span>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="showMap()" class="btn-header">
+            <i class="fas fa-map"></i> Peta
+          </button>
+          <button onclick="showHome()" class="btn-header">
+            <i class="fas fa-home"></i> Beranda
+          </button>
+        </div>
+      </header>
+
+      <main class="max-w-7xl mx-auto p-6">
+        <!-- FILTERS -->
+        <div class="bg-white p-5 rounded-xl shadow-sm mb-8 animate-fade-in-up" style="animation-duration: 0.4s;">
+          <h2 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <i class="fas fa-filter text-sky-600"></i> Filter Data
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <label class="block">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Kecamatan</span>
+              <select id="filterKecamatan" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-sky-500 transition-colors">
+                <option value="">Semua</option>
+              </select>
+            </label>
+
+
+
+            <label class="block">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Jenis Permukaan</span>
+              <select id="filterPermukaan" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-sky-500 transition-colors">
+                <option value="">Semua</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Kedalaman</span>
+              <select id="filterKedalaman" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-sky-500 transition-colors">
+                <option value="">Semua</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Drainase</span>
+              <select id="filterDrainase" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-sky-500 transition-colors">
+                <option value="">Semua</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="text-xs font-semibold text-slate-500 uppercase">Kemiringan</span>
+              <select id="filterKemiringan" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-sky-500 transition-colors">
+                <option value="">Semua</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <!-- CHARTS GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <!-- Chart Card 1 -->
+          <div class="bg-white p-5 rounded-xl shadow-sm animate-fade-in-up" style="animation-delay: 0.1s;">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">Distribusi Kedalaman</h3>
+            <canvas id="interactiveDepthChart" height="200"></canvas>
+          </div>
+
+          <!-- Chart Card 2 -->
+          <div class="bg-white p-5 rounded-xl shadow-sm animate-fade-in-up" style="animation-delay: 0.2s;">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">Persebaran Kecamatan</h3>
+            <canvas id="interactiveKecamatanChart" height="200"></canvas>
+          </div>
+
+          <!-- Chart Card 3 -->
+          <div class="bg-white p-5 rounded-xl shadow-sm animate-fade-in-up" style="animation-delay: 0.3s;">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">Pengaruh Drainase terhadap Kedalaman Genangan</h3>
+            <canvas id="interactiveDrainageDepthChart" height="200"></canvas>
+          </div>
+
+          <!-- Chart Card 4 -->
+          <div class="bg-white p-5 rounded-xl shadow-sm animate-fade-in-up" style="animation-delay: 0.4s;">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">Jenis Permukaan</h3>
+            <canvas id="interactivePermukaanChart" height="200"></canvas>
+          </div>
+
+          <!-- Chart Card 5 -->
+          <div class="bg-white p-5 rounded-xl shadow-sm animate-fade-in-up" style="animation-delay: 0.5s;">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">Kondisi Drainase</h3>
+            <canvas id="interactiveDrainaseChart" height="200"></canvas>
+          </div>
+
+          <!-- Chart Card 6 -->
+          <div class="bg-white p-5 rounded-xl shadow-sm animate-fade-in-up" style="animation-delay: 0.6s;">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">Rata-rata Kedalaman</h3>
+            <canvas id="interactiveAvgDepthChart" height="200"></canvas>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+
+
     <!-- JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="script.js"></script>

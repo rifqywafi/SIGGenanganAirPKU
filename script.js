@@ -23,62 +23,73 @@ const PEKANBARU_BBOX = {
 const API_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6dmJreHNvdXVsYWhmbWdkaHpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4ODkzOTEsImV4cCI6MjA4MTQ2NTM5MX0.F26b2HaXUScZ2oBdsKtk7Xryi4gyDKPjYyp6VejTm-0";
 const SUPABASE_URL = "https://izvbkxsouulahfmgdhzf.supabase.co";
-// ===============================
-// NAVIGASI PAGE
-// ===============================
-function showMap() {
-  document.getElementById("homePage").classList.add("page-hidden");
-  document.getElementById("homePage").classList.remove("page-active");
 
-  document.getElementById("mapPage").classList.remove("page-hidden");
-  document.getElementById("mapPage").classList.add("page-active");
+async function ensureDataLoaded() {
+  if (interactiveData.length === 0) {
+    await loadInteractiveData();
+  }
+}
 
-  // penting untuk Leaflet
+async function showMap() {
+  hideAllPages();
+  const page = document.getElementById("mapPage");
+  page.classList.remove("page-hidden");
+  page.classList.add("page-active");
+
   setTimeout(() => {
-    if(!map) initMap();
+    if (!map) initMap();
     map.invalidateSize();
   }, 200);
 }
 
 function showHome() {
-  document.getElementById("mapPage").classList.add("page-hidden");
-  document.getElementById("mapPage").classList.remove("page-active");
+  hideAllPages();
+  const page = document.getElementById("homePage");
+  page.classList.remove("page-hidden");
+  page.classList.add("page-active");
 
-  const home = document.getElementById("homePage");
-  home.classList.remove("page-hidden");
-  home.classList.add("page-active");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
-  setTimeout(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, 300);
+async function showVisualization() {
+  ensureDataLoaded();
+  hideAllPages();
+  const page = document.getElementById("visualizationPage");
+  page.classList.remove("page-hidden");
+  page.classList.add("page-active");
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function hideAllPages() {
+  const pages = document.querySelectorAll(".page");
+  pages.forEach(p => {
+    p.classList.add("page-hidden");
+    p.classList.remove("page-active");
+  });
 }
 
 function goHome() {
   showHome();
 }
 
-function toggleDataPanel() {
-  const panel = document.getElementById("dataPanel");
-  panel.classList.toggle("show");
-}
-
-// ===============================
-// TOGGLE LAYERS
-// ===============================
 function toggleLayer(layerName) {
   if (layerName === "flood") {
+    if (!floodLayer) return;
     if (map.hasLayer(floodLayer)) {
       map.removeLayer(floodLayer);
     } else {
       map.addLayer(floodLayer);
     }
   } else if (layerName === "kecamatan") {
+    if (!kecamatanLayer) return;
     if (map.hasLayer(kecamatanLayer)) {
       map.removeLayer(kecamatanLayer);
     } else {
       map.addLayer(kecamatanLayer);
     }
   } else if (layerName === "waterway") {
+    if (!waterwayLayer) return;
     if (map.hasLayer(waterwayLayer)) {
       map.removeLayer(waterwayLayer);
     } else {
@@ -101,6 +112,53 @@ function changeBaseMap(mapType) {
 }
 
 // ===============================
+// HELPER FUNCTIONS
+// ===============================
+const chartInstances = {};
+
+function renderChart(canvasId, type, labels, data, colors, options = {}) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+
+  if (chartInstances[canvasId]) {
+    chartInstances[canvasId].destroy();
+  }
+
+  const dataset = {
+    data: data,
+    backgroundColor: colors,
+    borderWidth: 1
+  };
+  
+  // Add 'label' if it's a dataset for legend, but for single dataset charts it's often optional
+  if (options.datasetLabel) {
+    dataset.label = options.datasetLabel;
+  }
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: type,
+    data: {
+      labels: labels,
+      datasets: [dataset],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: type === 'doughnut' || type === 'pie' }
+      },
+      ...options
+    },
+  });
+}
+
+function populateSelect(id, items) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '<option value="">Semua</option>' +
+    Array.from(items).sort().map(v => `<option value="${v}">${v}</option>`).join("");
+}
+
+// ===============================
 // FLOOD LAYER FILTERS
 // ===============================
 function populateFloodFilters(features) {
@@ -116,22 +174,9 @@ function populateFloodFilters(features) {
       kemiringan.add(f.properties.kemiringan_lahan);
   });
 
-  const kSel = document.getElementById("filterFloodKecamatan");
-  const dSel = document.getElementById("filterFloodDrainase");
-  const kmSel = document.getElementById("filterFloodKemiringan");
-
-  function fill(sel, items) {
-    sel.innerHTML =
-      '<option value="">Semua</option>' +
-      Array.from(items)
-        .sort()
-        .map((v) => `<option value="${v}">${v}</option>`)
-        .join("");
-  }
-
-  fill(kSel, kecamatan);
-  fill(dSel, drainase);
-  fill(kmSel, kemiringan);
+  populateSelect("filterFloodKecamatan", kecamatan);
+  populateSelect("filterFloodDrainase", drainase);
+  populateSelect("filterFloodKemiringan", kemiringan);
 }
 
 function applyFloodFilters() {
@@ -216,44 +261,46 @@ function getColor(d) {
 }
 
 function getRadius(d) {
-  return 6 + (d || 1);
+  return 6;
 }
 
-async function loadWaterwayLayer() {
-  try {
-    const res = await fetch("data/sumatra_waterways.json");
-    const geojson = await res.json();
+function loadWaterwayLayer() {
+  const url = "data/sumatra_waterways.json";
+  const layer = omnivore.geojson(url)
+    .on("ready", function () {
+      const geojson = layer.toGeoJSON();
 
-    // Filter hanya yang masuk bbox Pekanbaru
-    const filtered = {
-      type: "FeatureCollection",
-      features: geojson.features.filter((f) => {
-        if (!f.geometry) return false;
+      // Filter hanya yang masuk bbox Pekanbaru
+      const filtered = {
+        type: "FeatureCollection",
+        features: geojson.features.filter((f) => {
+          if (!f.geometry) return false;
 
-        const coords = f.geometry.coordinates.flat(Infinity);
+          const coords = f.geometry.coordinates.flat(Infinity);
 
-        for (let i = 0; i < coords.length; i += 2) {
-          const lng = coords[i];
-          const lat = coords[i + 1];
+          for (let i = 0; i < coords.length; i += 2) {
+            const lng = coords[i];
+            const lat = coords[i + 1];
 
-          if (
-            lat >= PEKANBARU_BBOX.minLat &&
-            lat <= PEKANBARU_BBOX.maxLat &&
-            lng >= PEKANBARU_BBOX.minLng &&
-            lng <= PEKANBARU_BBOX.maxLng
-          ) {
-            return true;
+            if (
+              lat >= PEKANBARU_BBOX.minLat &&
+              lat <= PEKANBARU_BBOX.maxLat &&
+              lng >= PEKANBARU_BBOX.minLng &&
+              lng <= PEKANBARU_BBOX.maxLng
+            ) {
+              return true;
+            }
           }
-        }
-        return false;
-      }),
-    };
+          return false;
+        }),
+      };
 
-    waterwayData = filtered;
-    renderWaterwayLayer(waterwayData);
-  } catch (e) {
-    console.error("Waterway layer error:", e);
-  }
+      waterwayData = filtered;
+      renderWaterwayLayer(waterwayData);
+    })
+    .on("error", function (e) {
+      console.error("Waterway layer error:", e);
+    });
 }
 
 function renderWaterwayLayer(geojson) {
@@ -279,26 +326,11 @@ function renderWaterwayLayer(geojson) {
   });
 
   waterwayLayer = L.layerGroup([baseLine, dashLine]);
-  // ⛔ jangan addTo(map)
 }
 
-// ===============================
-// LOAD KECAMATAN LAYER
-// ===============================
-async function loadKecamatanLayer() {
-  try {
-    const res = await fetch("data/wilayah.json");
-    const geojson = await res.json();
 
-    kecamatanData = geojson;
-    renderKecamatanLayer(kecamatanData);
-  } catch (e) {
-    console.error("Kecamatan layer error:", e);
-  }
-}
-
-function renderKecamatanLayer(geojson) {
-  kecamatanLayer = L.geoJSON(geojson, {
+function loadKecamatanLayer() {
+  const customLayer = L.geoJSON(null, {
     pane: "kecamatanPane",
 
     filter: (feature) => KECAMATAN.includes(feature.properties?.Kecamatan),
@@ -338,6 +370,15 @@ function renderKecamatanLayer(geojson) {
       });
     },
   });
+
+  kecamatanLayer = omnivore
+    .geojson("data/wilayah.json", null, customLayer)
+    .on("ready", function () {
+      kecamatanData = this.toGeoJSON();
+    })
+    .on("error", function (e) {
+      console.error("Kecamatan layer error:", e);
+    });
 }
 
 // ===============================
@@ -484,8 +525,6 @@ async function loadHomeData() {
 }
 
 function drawDepthChart(data) {
-  if (depthChart) depthChart.destroy();
-
   const bucket = { "1–3": 0, "4–6": 0, "7–9": 0, "≥10": 0 };
   data.forEach((d) => {
     if (d.kedalaman_cm >= 10) bucket["≥10"]++;
@@ -494,49 +533,19 @@ function drawDepthChart(data) {
     else if (d.kedalaman_cm >= 1) bucket["1–3"]++;
   });
 
-  depthChart = new Chart(document.getElementById("depthChart"), {
-    type: "bar",
-    data: {
-      labels: Object.keys(bucket),
-      datasets: [
-        {
-          data: Object.values(bucket),
-          backgroundColor: ["#3b82f6", "#facc15", "#f97316", "#dc2626"],
-        },
-      ],
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } },
+  renderChart("depthChart", "bar", Object.keys(bucket), Object.values(bucket), ["#3b82f6", "#facc15", "#f97316", "#dc2626"], {
+    plugins: { legend: { display: false } }
   });
 }
 
 function drawKecamatanChart(data) {
-  if (kecamatanChart) kecamatanChart.destroy();
-
   const count = {};
   data.forEach((d) => {
     if (d.kecamatan) count[d.kecamatan] = (count[d.kecamatan] || 0) + 1;
   });
-
-  kecamatanChart = new Chart(document.getElementById("kecamatanChart"), {
-    type: "pie",
-    data: {
-      labels: Object.keys(count),
-      datasets: [
-        {
-          data: Object.values(count),
-          backgroundColor: [
-            "#2563eb",
-            "#16a34a",
-            "#f97316",
-            "#dc2626",
-            "#9333ea",
-            "#0ea5e9",
-          ],
-        },
-      ],
-    },
-    options: { responsive: true },
-  });
+  
+  const colors = ["#2563eb", "#16a34a", "#f97316", "#dc2626", "#9333ea", "#0ea5e9"];
+  renderChart("kecamatanChart", "pie", Object.keys(count), Object.values(count), colors);
 }
 
 // ===============================
@@ -545,26 +554,6 @@ function drawKecamatanChart(data) {
 let interactiveData = [];
 let interactiveChart = null;
 let interactiveLayer = null;
-let activeChart = "depthChart"; // track which accordion is open
-
-function toggleChart(chartName) {
-  const items = document.querySelectorAll(".accordion-item");
-  items.forEach((item) => item.classList.remove("active"));
-
-  if (activeChart === chartName) {
-    activeChart = null;
-  } else {
-    activeChart = chartName;
-    // find and activate the matching accordion item by checking onclick attribute
-    const btns = document.querySelectorAll(".accordion-btn");
-    btns.forEach((btn) => {
-      const onclick = btn.getAttribute("onclick");
-      if (onclick && onclick.includes(`toggleChart('${chartName}')`)) {
-        btn.closest(".accordion-item").classList.add("active");
-      }
-    });
-  }
-}
 
 async function loadInteractiveData() {
   try {
@@ -600,26 +589,10 @@ function populateFilters(data) {
     if (d.kemiringan_lahan) kemiringan.add(d.kemiringan_lahan);
   });
 
-  const kSel = document.getElementById("filterKecamatan");
-  const sSel = document.getElementById("filterSurveyor");
-  const jSel = document.getElementById("filterPermukaan");
-  const dSel = document.getElementById("filterDrainase");
-  const kmSel = document.getElementById("filterKemiringan");
-
-  function fill(sel, items) {
-    sel.innerHTML =
-      '<option value="">Semua</option>' +
-      Array.from(items)
-        .sort()
-        .map((v) => `<option value="${v}">${v}</option>`)
-        .join("");
-  }
-
-  fill(kSel, kec);
-  fill(sSel, surv);
-  fill(jSel, jenis);
-  fill(dSel, drainase);
-  fill(kmSel, kemiringan);
+  populateSelect("filterKecamatan", kec);
+  populateSelect("filterPermukaan", jenis);
+  populateSelect("filterDrainase", drainase);
+  populateSelect("filterKemiringan", kemiringan);
 
   // Add kedalaman range filter
   const depthSel = document.getElementById("filterKedalaman");
@@ -631,17 +604,16 @@ function populateFilters(data) {
     <option value="10+">≥10 cm</option>
   `;
 
-  kSel.addEventListener("change", applyFilters);
-  sSel.addEventListener("change", applyFilters);
-  jSel.addEventListener("change", applyFilters);
+  document.getElementById("filterKecamatan").addEventListener("change", applyFilters);
+  document.getElementById("filterPermukaan").addEventListener("change", applyFilters);
   depthSel.addEventListener("change", applyFilters);
-  dSel.addEventListener("change", applyFilters);
-  kmSel.addEventListener("change", applyFilters);
+  document.getElementById("filterDrainase").addEventListener("change", applyFilters);
+  document.getElementById("filterKemiringan").addEventListener("change", applyFilters);
 }
 
 function applyFilters() {
   const k = document.getElementById("filterKecamatan").value;
-  const s = document.getElementById("filterSurveyor").value;
+  // const s = document.getElementById("filterSurveyor").value; // Removed usage
   const j = document.getElementById("filterPermukaan").value;
   const d = document.getElementById("filterKedalaman").value;
   const dr = document.getElementById("filterDrainase").value;
@@ -649,7 +621,7 @@ function applyFilters() {
 
   let filtered = interactiveData.slice();
   if (k) filtered = filtered.filter((item) => item.kecamatan === k);
-  if (s) filtered = filtered.filter((item) => item.surveyor === s);
+  // if (s) filtered = filtered.filter((item) => item.surveyor === s); // Removed usage
   if (j) filtered = filtered.filter((item) => item.jenis_permukaan === j);
   if (dr) filtered = filtered.filter((item) => item.kondisi_drainase === dr);
   if (km) filtered = filtered.filter((item) => item.kemiringan_lahan === km);
@@ -740,16 +712,14 @@ function updateInteractiveLayer(data) {
 function updateAllCharts(data) {
   drawInteractiveDepthChart(data);
   drawInteractiveKecamatanChart(data);
-  drawInteractiveSurveyorChart(data);
+  drawInteractiveDrainageDepthChart(data); // Replaced Surveyor
   drawInteractivePermukaanChart(data);
   drawInteractiveDrainaseChart(data);
   drawInteractiveAvgDepthChart(data);
 }
 
 // Chart 1: Distribusi Kedalaman
-let interactiveDepthChart = null;
 function drawInteractiveDepthChart(data) {
-  if (interactiveDepthChart) interactiveDepthChart.destroy();
   const bucket = { "1–3": 0, "4–6": 0, "7–9": 0, "≥10": 0 };
   data.forEach((d) => {
     const v = Number(d.kedalaman_cm) || 0;
@@ -758,144 +728,62 @@ function drawInteractiveDepthChart(data) {
     else if (v >= 4) bucket["4–6"]++;
     else if (v >= 1) bucket["1–3"]++;
   });
-  const ctx = document.getElementById("interactiveDepthChart");
-  if (!ctx) return;
-  interactiveDepthChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: Object.keys(bucket),
-      datasets: [
-        {
-          data: Object.values(bucket),
-          backgroundColor: ["#647FBC", "#91ADC8", "#AED6CF", "#FAFDD6"],
-        },
-      ],
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } },
+  renderChart("interactiveDepthChart", "bar", Object.keys(bucket), Object.values(bucket), ["#647FBC", "#91ADC8", "#AED6CF", "#FAFDD6"], { 
+    plugins: { legend: { display: false } } 
   });
 }
 
 // Chart 2: Persebaran Kecamatan
-let interactiveKecamatanChart = null;
 function drawInteractiveKecamatanChart(data) {
-  if (interactiveKecamatanChart) interactiveKecamatanChart.destroy();
   const count = {};
   data.forEach((d) => {
     if (d.kecamatan) count[d.kecamatan] = (count[d.kecamatan] || 0) + 1;
   });
-  const ctx = document.getElementById("interactiveKecamatanChart");
-  if (!ctx) return;
-  interactiveKecamatanChart = new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: Object.keys(count),
-      datasets: [
-        {
-          data: Object.values(count),
-          backgroundColor: [
-            "#647FBC",
-            "#91ADC8",
-            "#AED6CF",
-            "#FAFDD6",
-            "#f97316",
-            "#dc2626",
-          ],
-        },
-      ],
-    },
-    options: { responsive: true },
-  });
+  renderChart("interactiveKecamatanChart", "doughnut", Object.keys(count), Object.values(count), ["#647FBC", "#91ADC8", "#AED6CF", "#FAFDD6", "#f97316", "#dc2626"]);
 }
 
-let interactiveSurveyorChart = null;
-function drawInteractiveSurveyorChart(data) {
-  if (interactiveSurveyorChart) interactiveSurveyorChart.destroy();
-  const count = {};
+function drawInteractiveDrainageDepthChart(data) {
+  const groups = {};
   data.forEach((d) => {
-    if (d.surveyor) count[d.surveyor] = (count[d.surveyor] || 0) + 1;
+    const drainase = d.kondisi_drainase || "Tidak Diketahui";
+    const depth = Number(d.kedalaman_cm) || 0;
+    if (!groups[drainase]) groups[drainase] = { sum: 0, count: 0 };
+    groups[drainase].sum += depth;
+    groups[drainase].count += 1;
   });
-  const ctx = document.getElementById("interactiveSurveyorChart");
-  if (!ctx) return;
-  interactiveSurveyorChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: Object.keys(count),
-      datasets: [
-        {
-          data: Object.values(count),
-          backgroundColor: "#647FBC",
-        },
-      ],
-    },
-    options: {
-      indexAxis: "y",
-      responsive: true,
-      plugins: { legend: { display: false } },
-    },
+
+  const avgData = {};
+  Object.keys(groups).forEach((key) => {
+    avgData[key] = (groups[key].sum / groups[key].count).toFixed(1);
+  });
+
+  renderChart("interactiveDrainageDepthChart", "bar", Object.keys(avgData), Object.values(avgData), "#f97316", {
+    indexAxis: "y",
+    plugins: { legend: { display: false } },
+    scales: { x: { title: { display: true, text: "Rata-rata Kedalaman (cm)" } } },
+    datasetLabel: "Rata-rata Kedalaman (cm)"
   });
 }
 
-let interactivePermukaanChart = null;
 function drawInteractivePermukaanChart(data) {
-  if (interactivePermukaanChart) interactivePermukaanChart.destroy();
   const count = {};
   data.forEach((d) => {
     if (d.jenis_permukaan)
       count[d.jenis_permukaan] = (count[d.jenis_permukaan] || 0) + 1;
   });
-  const ctx = document.getElementById("interactivePermukaanChart");
-  if (!ctx) return;
-  interactivePermukaanChart = new Chart(ctx, {
-    type: "pie",
-    data: {
-      labels: Object.keys(count),
-      datasets: [
-        {
-          data: Object.values(count),
-          backgroundColor: [
-            "#647FBC",
-            "#91ADC8",
-            "#AED6CF",
-            "#FAFDD6",
-            "#f97316",
-          ],
-        },
-      ],
-    },
-    options: { responsive: true },
-  });
+  renderChart("interactivePermukaanChart", "pie", Object.keys(count), Object.values(count), ["#647FBC", "#91ADC8", "#AED6CF", "#FAFDD6", "#f97316"]);
 }
 
-// Chart 5: Kondisi Drainase
-let interactiveDrainaseChart = null;
 function drawInteractiveDrainaseChart(data) {
-  if (interactiveDrainaseChart) interactiveDrainaseChart.destroy();
   const count = {};
   data.forEach((d) => {
     if (d.kondisi_drainase)
       count[d.kondisi_drainase] = (count[d.kondisi_drainase] || 0) + 1;
   });
-  const ctx = document.getElementById("interactiveDrainaseChart");
-  if (!ctx) return;
-  interactiveDrainaseChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: Object.keys(count),
-      datasets: [
-        {
-          data: Object.values(count),
-          backgroundColor: "#91ADC8",
-        },
-      ],
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } },
-  });
+  renderChart("interactiveDrainaseChart", "bar", Object.keys(count), Object.values(count), "#91ADC8", { plugins: { legend: { display: false } } });
 }
 
-// Chart 6: Rata-rata Kedalaman per Kecamatan
-let interactiveAvgDepthChart = null;
 function drawInteractiveAvgDepthChart(data) {
-  if (interactiveAvgDepthChart) interactiveAvgDepthChart.destroy();
   const kecData = {};
   data.forEach((d) => {
     if (d.kecamatan && d.kedalaman_cm != null) {
@@ -908,24 +796,10 @@ function drawInteractiveAvgDepthChart(data) {
   Object.keys(kecData).forEach((k) => {
     avgData[k] = (kecData[k].sum / kecData[k].count).toFixed(1);
   });
-  const ctx = document.getElementById("interactiveAvgDepthChart");
-  if (!ctx) return;
-  interactiveAvgDepthChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: Object.keys(avgData),
-      datasets: [
-        {
-          data: Object.values(avgData),
-          backgroundColor: "#AED6CF",
-        },
-      ],
-    },
-    options: {
-      indexAxis: "y",
-      responsive: true,
-      plugins: { legend: { display: false } },
-    },
+  
+  renderChart("interactiveAvgDepthChart", "bar", Object.keys(avgData), Object.values(avgData), "#AED6CF", { 
+    indexAxis: "y", 
+    plugins: { legend: { display: false } } 
   });
 }
 

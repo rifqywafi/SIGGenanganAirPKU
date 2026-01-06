@@ -10,13 +10,23 @@ body {
 }
 
 /* ================= PAGE SYSTEM ================= */
+/* ================= PAGE SYSTEM ================= */
 .page {
   width: 100vw;
   height: 100vh;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+  transform: translateY(10px);
 }
 
 .page-hidden {
   display: none;
+  opacity: 0;
+}
+
+.page-active {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ================= HOME ================= */
@@ -96,6 +106,22 @@ body {
   inset: 0;
 }
 
+/* ================= ANIMATIONS ================= */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out backwards;
+}
+
 /* ================= FLOAT PANELS ================= */
 .layer-control,
 .legend-box {
@@ -108,80 +134,10 @@ body {
   font-size: 14px;
 }
 
-/* Interactive data panel */
-.data-panel {
-  position: absolute;
-  left: 20px;
-  top: 20px;
-  width: 450px;
-  height: calc(100vh - 104px);
-  overflow-y: auto;
-  background: white;
-  border-radius: 14px;
-  padding: 14px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  z-index: 1200;
-  font-size: 14px;
-  display: none;
-  opacity: 0;
-  transform: translateX(-30px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+canvas {
+  width: 100% !important;
+  height: auto !important;
 }
-
-.data-panel.show {
-  display: block;
-  opacity: 1;
-  transform: translateX(0);
-}
-
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.data-panel h3 { margin-bottom: 8px; }
-.data-panel .filters { display: flex; gap: 10px; flex-direction: column; margin-bottom: 12px; padding: 12px; background: #f8fafc; border-radius: 8px; }
-.data-panel .filters label { font-size: 13px; display: flex; flex-direction: column; font-weight: 500; }
-.data-panel select { margin-top: 6px; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; background: white; }
-
-/* Accordion styling */
-.accordion { display: flex; flex-direction: column; gap: 6px; }
-.accordion-item { border: 1px solid #e5e7eb; border-radius: 8px; }
-.accordion-btn {
-  width: 100%;
-  padding: 10px 12px;
-  text-align: left;
-  background: #f9fafb;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background 0.2s;
-}
-.accordion-btn:hover { background: #f3f4f6; }
-.accordion-btn i { transition: transform 0.3s; }
-
-.accordion-item.active .accordion-btn { background: #eff6ff; color: #0369a1; }
-.accordion-item.active .accordion-btn i { transform: rotate(180deg); }
-
-.accordion-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-  padding: 0 12px;
-}
-.accordion-item.active .accordion-content { max-height: 400px; padding: 12px; }
-
-.data-panel canvas { width: 100% !important; height: auto !important; display: block; }
 
 .layer-control {
   top: 20px;
@@ -343,3 +299,4 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(174, 214, 207, 0.35);
 }
+
