@@ -30,14 +30,14 @@ function showMap() {
   document.getElementById("homePage").classList.add("page-hidden");
   document.getElementById("homePage").classList.remove("page-active");
 
-  const mapPage = document.getElementById("mapPage");
-  mapPage.classList.remove("page-hidden");
-  mapPage.classList.add("page-active");
+  document.getElementById("mapPage").classList.remove("page-hidden");
+  document.getElementById("mapPage").classList.add("page-active");
 
+  // penting untuk Leaflet
   setTimeout(() => {
-    if (!map) initMap();
-    else map.invalidateSize();
-  }, 300);
+    if(!map) initMap();
+    map.invalidateSize();
+  }, 200);
 }
 
 function showHome() {
@@ -49,7 +49,6 @@ function showHome() {
   home.classList.add("page-active");
 
   setTimeout(() => {
-    loadHomeCharts();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, 300);
 }
