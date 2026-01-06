@@ -51,6 +51,11 @@
         <span class="dot d3"></span>
         <span class="dot d4"></span>
         <span class="dot d5"></span>
+        <span class="dot d6"></span>
+        <span class="dot d7"></span>
+        <span class="dot d8"></span>
+        <span class="dot d9"></span>
+        <span class="dot d10"></span>
       </div>
 
       <section class="hero">
@@ -106,9 +111,14 @@
           <i class="fas fa-water"></i>
           <span>SIG Genangan Air Pekanbaru</span>
         </div>
-        <button onclick="showHome()" class="btn-header">
-          <i class="fas fa-home"></i> Beranda
-        </button>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="toggleDataPanel()" class="btn-header">
+            <i class="fas fa-chart-bar"></i> Visualisasi
+          </button>
+          <button onclick="showHome()" class="btn-header">
+            <i class="fas fa-home"></i> Beranda
+          </button>
+        </div>
       </header>
 
       <!-- MAP WRAPPER -->
@@ -117,21 +127,78 @@
         <div id="map"></div>
 
         <!-- LAYER CONTROL -->
-        <div class="layer-control">
-          <h3><i class="fas fa-layer-group"></i> Kontrol Layer</h3>
+       <div class="layer-control">
+  <h3 class="flex items-center gap-2 font-semibold mb-3">
+    <i class="fas fa-layer-group"></i> Kontrol Layer
+  </h3>
 
-          <label>
-            <input type="checkbox" checked onclick="toggleLayer('flood')" />
-            Data Genangan Air
-          </label>
-          <label>
-            <input type="checkbox" checked onclick="toggleLayer('osm')" />
-            OpenStreetMap
-          </label>
-          <label>
-            <input type="checkbox" onclick="toggleLayer('satellite')" />
-            Peta Satelit
-          </label>
+  <label class="flex items-center gap-2 mb-3 text-sm">
+    <input type="checkbox" checked onclick="toggleLayer('flood')" />
+    Data Genangan Air
+  </label>
+
+  <label class="flex items-center gap-2 mb-3 text-sm">
+    <input type="checkbox" onclick="toggleLayer('kecamatan')" />
+    Batas Kecamatan
+  </label>
+
+  <label class="flex items-center gap-2 mb-3 text-sm">
+    <input type="checkbox" onclick="toggleLayer('waterway')" />
+    Saluran Air
+  </label>
+
+  <h4 class="mt-3 mb-2 font-medium">Peta Dasar:</h4>
+
+  <div class="ml-4 mb-3 space-y-2 text-sm">
+    <label class="flex items-center gap-2">
+      <input type="radio" name="baseMap" checked onchange="changeBaseMap('osm')" />
+      OpenStreetMap
+    </label>
+
+    <label class="flex items-center gap-2">
+      <input type="radio" name="baseMap" onchange="changeBaseMap('satellite')" />
+      Peta Satelit
+    </label>
+  </div>
+</div>
+
+
+          <hr />
+
+          <h4 style="margin: 12px 0 8px 0;">Filter Titik Genangan:</h4>
+          <div style="font-size: 13px; margin-bottom: 12px;">
+            <label style="display: block; margin-bottom: 8px;">
+              Kecamatan:
+              <select id="filterFloodKecamatan" style="width: 100%; margin-top: 4px; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1;" onchange="applyFloodFilters()">
+                <option value="">Semua</option>
+              </select>
+            </label>
+
+            <label style="display: block; margin-bottom: 8px;">
+              Kedalaman:
+              <select id="filterFloodKedalaman" style="width: 100%; margin-top: 4px; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1;" onchange="applyFloodFilters()">
+                <option value="">Semua</option>
+                <option value="1-3">1-3 cm</option>
+                <option value="4-6">4-6 cm</option>
+                <option value="7-9">7-9 cm</option>
+                <option value="10+">≥10 cm</option>
+              </select>
+            </label>
+
+            <label style="display: block; margin-bottom: 8px;">
+              Drainase:
+              <select id="filterFloodDrainase" style="width: 100%; margin-top: 4px; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1;" onchange="applyFloodFilters()">
+                <option value="">Semua</option>
+              </select>
+            </label>
+
+            <label style="display: block;">
+              Kemiringan Lahan:
+              <select id="filterFloodKemiringan" style="width: 100%; margin-top: 4px; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1;" onchange="applyFloodFilters()">
+                <option value="">Semua</option>
+              </select>
+            </label>
+          </div>
 
           <hr />
 
@@ -163,12 +230,90 @@
             <span class="dot red"></span> Sangat Tinggi (≥10 cm)
           </div>
         </div>
+        
+        <!-- DATA PANEL: Interactive visualization -->
+        <div class="data-panel" id="dataPanel">
+          <h2 class="mb-3 font-bold text-xl"> Visualisasi</h2>
+
+          <div class="filters">
+            <label>Kecamatan:
+              <select id="filterKecamatan"><option value="">Semua</option></select>
+            </label>
+
+            <label>Surveyor:
+              <select id="filterSurveyor"><option value="">Semua</option></select>
+            </label>
+
+            <label>Jenis Permukaan:
+              <select id="filterPermukaan"><option value="">Semua</option></select>
+            </label>
+
+            <label>Kedalaman:
+              <select id="filterKedalaman"><option value="">Semua</option></select>
+            </label>
+
+            <label>Kondisi Drainase:
+              <select id="filterDrainase"><option value="">Semua</option></select>
+            </label>
+
+            <label>Kemiringan Lahan:
+              <select id="filterKemiringan"><option value="">Semua</option></select>
+            </label>
+          </div>
+
+          <!-- Accordion Charts -->
+          <div class="accordion">
+            <div class="accordion-item active">
+              <button class="accordion-btn" onclick="toggleChart('depthChart')"><i class="fas fa-chevron-down"></i> Distribusi Kedalaman</button>
+              <div class="accordion-content" id="depthChartContent">
+                <canvas id="interactiveDepthChart" height="130"></canvas>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-btn" onclick="toggleChart('kecamatanChart')"><i class="fas fa-chevron-down"></i> Persebaran Kecamatan</button>
+              <div class="accordion-content" id="kecamatanChartContent">
+                <canvas id="interactiveKecamatanChart" height="100"></canvas>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-btn" onclick="toggleChart('surveyorChart')"><i class="fas fa-chevron-down"></i> Distribusi Surveyor</button>
+              <div class="accordion-content" id="surveyorChartContent">
+                <canvas id="interactiveSurveyorChart" height="130"></canvas>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-btn" onclick="toggleChart('permukaanChart')"><i class="fas fa-chevron-down"></i> Jenis Permukaan</button>
+              <div class="accordion-content" id="permukaanChartContent">
+                <canvas id="interactivePermukaanChart" height="100"></canvas>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-btn" onclick="toggleChart('drainaseChart')"><i class="fas fa-chevron-down"></i> Kondisi Drainase</button>
+              <div class="accordion-content" id="drainaseChartContent">
+                <canvas id="interactiveDrainaseChart" height="130"></canvas>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-btn" onclick="toggleChart('avgDepthChart')"><i class="fas fa-chevron-down"></i> Rata-rata Kedalaman per Kecamatan</button>
+              <div class="accordion-content" id="avgDepthChartContent">
+                <canvas id="interactiveAvgDepthChart" height="130"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
     <!-- JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="script.js"></script>
   </body>
 </html>
